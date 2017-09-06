@@ -142,8 +142,56 @@ def drawdendrogram(clust,labels,jpeg = 'clusters.jpg'):
     drawnode(draw,clust,10,(h/2),scaling,labels)
     img.save(jpeg,'JPEG')
 
+def rotatematrix(data):
+    newdata = []
+    for i in range(len(data[0])):
+        newrow = [data[j][i] for j in range(len(data))]
+        newdata.append(newrow)
+    return newdata
+
+import random
+
+def kcluster(rows,distance=pearson,k=4):
+
+    ranges = [(min([row[i] for row in rows]),max([row[i] for row in rows]))
+            for i in range(len(rows[0]))]
+    
+    #中心点, 点其实是一个向量
+    clusters = [[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]
+        for i in range(len(rows[0]))] for j in range(k)]
+    
+    lastclusters = None
+    for i in range(100):
+        curclusters = [[] for i in range(k)]
+        
+        for j in range(len(rows)):
+            pos = 0
+            for t in range(k):
+                dist = distance(rows[j],clusters[t])
+                if dist < distance(clusters[pos],rows[j]):
+                    pos = t
+            curclusters[pos].append(j)
+
+        if curclusters == lastclusters:
+            break
+        lastclusters = curclusters
+
+        for t in range(k):
+            avgs = [0.0]*len(rows[0])
+            if len(curclusters[t]) > 0:
+                for rowid in curclusters[t]:
+                    for k in range(len(rows[rowid])):
+                        avgs[k] += rows[rowid][k]
+                for j in range(len(avgs)):
+                    avgs[j]/=len(curclusters[t])
+                clusters[i] = avgs
+    
+    return lastclusters
+
+
 if __name__ == '__main__':
     blogname,words,data = readfile('blogdata.txt')
-    clust = hcluster(data)
-    printclust(clust,blogname)
-    drawdendrogram(clust,blogname)
+    #clust = hcluster(data)
+    #printclust(clust,blogname)
+    #drawdendrogram(clust,blogname)
+    kcluster(data)
